@@ -1,7 +1,13 @@
 import { pool } from "../db/index.js";
 
+// Add a new student
 const addStudent = async (req, res) => {
   const { name, age, grade } = req.body;
+
+  if (!name || !age || !grade) {
+    return res.status(400).json({ error: "Name, age, and grade are required" });
+  }
+
   try {
     const result = await pool.query(
       "INSERT INTO students (name, age, grade) VALUES ($1, $2, $3) RETURNING *",
@@ -15,6 +21,7 @@ const addStudent = async (req, res) => {
   }
 };
 
+// Get all students
 const getAllStudents = async (req, res) => {
   try {
     const result = await pool.query("SELECT * FROM students");
@@ -24,9 +31,15 @@ const getAllStudents = async (req, res) => {
   }
 };
 
+// Update a student's grade by ID
 const updateStudent = async (req, res) => {
   const { id } = req.params;
   const { grade } = req.body;
+
+  if (!id || !grade) {
+    return res.status(400).json({ error: "Student ID and grade is required" });
+  }
+
   try {
     const result = await pool.query(
       "UPDATE students SET grade = $1 WHERE id = $2 RETURNING *",
@@ -41,8 +54,14 @@ const updateStudent = async (req, res) => {
   }
 };
 
+// Delete a student by ID
 const removeStudent = async (req, res) => {
   const { id } = req.params;
+
+  if (!id) {
+    return res.status(400).json({ error: "Student ID is required" });
+  }
+
   try {
     const result = await pool.query(
       "DELETE FROM students WHERE id = $1 RETURNING *",
@@ -57,4 +76,29 @@ const removeStudent = async (req, res) => {
   }
 };
 
-export { addStudent, getAllStudents, removeStudent, updateStudent };
+// Search students by name
+const searchStudentsByName = async (req, res) => {
+  const { name } = req.query;
+
+  if (!name) {
+    return res.status(400).json({ error: "Name query parameter is required" });
+  }
+
+  try {
+    const result = await pool.query(
+      "SELECT * FROM students WHERE name ILIKE $1",
+      [`%${name}%`]
+    );
+    res.status(200).json(result.rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
+
+export {
+  addStudent,
+  getAllStudents,
+  removeStudent,
+  updateStudent,
+  searchStudentsByName,
+};
